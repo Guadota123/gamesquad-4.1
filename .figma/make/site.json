@@ -1,0 +1,10 @@
+{
+  "description": "Enhance your gaming experience with interactive notifications and private messaging features, keeping you updated and connected with teammates effortlessly.",
+  "robots": {
+    "index": false
+  },
+  "accessibility": {
+    "addBypassLinks": false,
+    "ignoreReducedMotion": false
+  }
+}
