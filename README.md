@@ -8,5 +8,5 @@
 - npm run build (Genera la versión de producción)
 
 ## Enlaces
-- *Sitio publicado:* (Lo agregaremos luego de subirlo a Netlify)
+- *Sitio publicado:* ([https://silver-froyo-390f2e.netlify.app](https://silver-froyo-390f2e.netlify.app))
 - *Prototipo en Figma:* (Enlace del diseño de la Ejercitación 1.1)
