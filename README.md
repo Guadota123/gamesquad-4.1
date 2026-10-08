@@ -9,4 +9,4 @@
 
 ## Enlaces
 - *Sitio publicado:* ([https://silver-froyo-390f2e.netlify.app](https://silver-froyo-390f2e.netlify.app))
-- *Prototipo en Figma:* (Enlace del diseño de la Ejercitación 1.1)
+- *Prototipo en Figma:* (https://www.figma.com/make/5aYR1K57CRL8hsVRhKqeS2/GAMESQUAD-Interactive-Prototype?t=2QYZRN8sXUmDs5HT-6)
