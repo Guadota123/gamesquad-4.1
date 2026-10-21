@@ -1191,12 +1191,28 @@ function NotificationsDropdown({ onMarkRead }: { onMarkRead: () => void }) {
 }
 
 // ─── Messages Dropdown & Chat Modal ──────────────────────────────────────────
-const DM_CHATS = [
-  { id: 1, user: "Gonzalo_RL", avatar: "https://i.pravatar.cc/100?img=19", preview: "¿A qué hora jugamos hoy?", time: "2 min", unread: true },
-  { id: 2, user: "SQUAD #104", avatar: "https://i.pravatar.cc/100?img=11", preview: "Sala lista", time: "14 min", unread: false },
+const dmChats = [
+  {
+    id: "1",
+    user: "Slayer99",
+    avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Slayer99",
+    status: "online",
+    preview: "¡Buenas! ¿Sale esa partida hoy?",
+    time: "10:30 AM",
+    unread: 1,
+  },
+  {
+    id: "2",
+    user: "PixelQueen",
+    avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=PixelQueen",
+    status: "offline",
+    preview: "Avisame cuando estés libre.",
+    time: "Ayer",
+    unread: 0,
+  }
 ];
 
-function ChatModal({ chat, onClose }: { chat: typeof DM_CHATS[0]; onClose: () => void }) {
+function ChatModal({ chat, onClose }: { chat: typeof dmChats[0]; onClose: () => void }) {
   const [msg, setMsg] = useState("");
   const [messages, setMessages] = useState([
     { from: "them", text: chat.preview },
@@ -1262,8 +1278,21 @@ function ChatModal({ chat, onClose }: { chat: typeof DM_CHATS[0]; onClose: () =>
     </div>
   );
 }
+function MessagesDropdown({ onChatOpen }: { onChatOpen: (chat: typeof dmChats[0]) => void }) {
+  const [dmChatsState, setDmChatsState] = useState<any[]>(() => {
+    const saved = localStorage.getItem("game_squad_dm_chats");
+    if (saved) {
+      try {
+        return JSON.parse(saved);
+      } catch (e) {}
+    }
+    return dmChats;
+  });
 
-function MessagesDropdown({ onChatOpen }: { onChatOpen: (chat: typeof DM_CHATS[0]) => void }) {
+  useEffect(() => {
+    localStorage.setItem("game_squad_dm_chats", JSON.stringify(dmChatsState));
+  }, [dmChatsState]);
+
   return (
     <div className="absolute right-0 top-full mt-3 rounded-2xl overflow-hidden z-[150]"
       style={{ width: "300px", background: "rgba(8,12,20,0.98)", border: `1px solid ${C.border}`, backdropFilter: "blur(24px)", boxShadow: "0 8px 40px rgba(0,0,0,0.75), 0 0 30px rgba(176,38,255,0.08)" }}
@@ -1274,10 +1303,10 @@ function MessagesDropdown({ onChatOpen }: { onChatOpen: (chat: typeof DM_CHATS[0
         </span>
       </div>
       <div className="flex flex-col">
-        {DM_CHATS.map((c, i) => (
+        {dmChatsState.map((c : any, i: any) => (
           <button key={c.id} onClick={() => onChatOpen(c)}
             className="flex items-center gap-3 px-5 py-4 text-left cursor-pointer border-none w-full transition-all"
-            style={{ background: "transparent", borderBottom: i < DM_CHATS.length - 1 ? "1px solid rgba(255,255,255,0.04)" : "none" }}
+            style={{ background: "transparent", borderBottom: i < dmChatsState.length - 1 ? "1px solid rgba(255,255,255,0.04)" : "none" }}
             onMouseEnter={(e) => { e.currentTarget.style.background = "rgba(176,38,255,0.05)"; }}
             onMouseLeave={(e) => { e.currentTarget.style.background = "transparent"; }}
           >
@@ -1296,7 +1325,6 @@ function MessagesDropdown({ onChatOpen }: { onChatOpen: (chat: typeof DM_CHATS[0
     </div>
   );
 }
-
 // ─── Screen 5: Home (shell con tabs) ─────────────────────────────────────────
 type HomeTab = "Inicio" | "Partidas" | "Equipos" | "Comunidad";
 
@@ -1305,7 +1333,14 @@ function HomeScreen({ nav }: { nav: (s: Screen) => void }) {
   const [notifOpen, setNotifOpen] = useState(false);
   const [notifRead, setNotifRead] = useState(false);
   const [mailOpen, setMailOpen] = useState(false);
-  const [activeChat, setActiveChat] = useState<typeof DM_CHATS[0] | null>(null);
+  const [activeChat, setActiveChat] = useState<typeof dmChats[0] | null>(null);
+  useEffect(() => {
+  const handleOpenChat = (e: any) => {
+    setActiveChat(e.detail);
+  };
+  window.addEventListener("open-user-chat", handleOpenChat);
+  return () => window.removeEventListener("open-user-chat", handleOpenChat);
+}, []);
   const bellRef = useRef<HTMLDivElement>(null);
   const mailRef = useRef<HTMLDivElement>(null);
 
@@ -1850,9 +1885,8 @@ function playerMockStats(name: string) {
   const h = name.split("").reduce((a, c) => a + c.charCodeAt(0), 0);
   return { winrate: `${45 + (h % 35)}%`, hours: `${80 + (h % 420)}h` };
 }
-
 function PlayerHoverCard() {
-  const { card, hideCard, addSent, isSent } = useFriends();
+  const { card, hideCard, addSent, isSent, friends } = useFriends();
 
   useEffect(() => {
     const handler = (e: KeyboardEvent) => { if (e.key === "Escape") hideCard(); };
@@ -1863,6 +1897,7 @@ function PlayerHoverCard() {
   if (!card) return null;
   const { player } = card;
   const sent = isSent(player.name);
+  const alreadyFriend = friends ? friends.some(f => f.name === player.name) : false;
   const stats = playerMockStats(player.name);
 
   return (
@@ -1932,25 +1967,55 @@ function PlayerHoverCard() {
 
         {/* Actions */}
         <div className="px-6 py-5 flex flex-col gap-3">
-          <button
-            onClick={() => { if (!sent) addSent(player.name); }}
-            disabled={sent}
-            className="w-full font-orbitron font-black text-sm rounded-xl py-3.5 border-none transition-all duration-200"
-            style={{
-              background: sent ? "rgba(176,38,255,0.12)" : "linear-gradient(135deg,rgba(0,240,255,0.28),rgba(0,240,255,0.62))",
-              border: `2px solid ${sent ? C.purple : C.cyan}`,
-              color: sent ? C.purple : "#fff",
-              boxShadow: sent ? "none" : "0 0 18px rgba(0,240,255,0.3)",
-              cursor: sent ? "default" : "pointer",
-              letterSpacing: "0.06em",
-            }}
-            onMouseEnter={(e) => { if (!sent) e.currentTarget.style.boxShadow = glowCyan; }}
-            onMouseLeave={(e) => { if (!sent) e.currentTarget.style.boxShadow = "0 0 18px rgba(0,240,255,0.3)"; }}
-          >
-            {sent
-              ? <><i className="fa-solid fa-check mr-2" />SOLICITUD ENVIADA</>
-              : <><i className="fa-solid fa-user-plus mr-2" />+ AGREGAR AMIGO</>}
-          </button>
+          {alreadyFriend ? (
+            <button
+              onClick={() => {
+                hideCard();
+                // Disparamos un evento global con los datos del usuario para abrir su chat de inmediato
+                const existingChat = dmChats.find((c: any) => c.user === player.name);
+                const chatToOpen = existingChat || {
+                  id: Date.now(),
+                  user: player.name,
+                  avatar: player.avatar,
+                  preview: "¡Hola!",
+                  time: "Ahora",
+                  unread: false,
+                };
+                window.dispatchEvent(new CustomEvent("open-user-chat", { detail: chatToOpen }));
+              }}
+              className="w-full font-orbitron font-black text-sm rounded-xl py-3.5 border-none cursor-pointer transition-all duration-200"
+              style={{
+                background: "linear-gradient(135deg,rgba(0,255,102,0.28),rgba(0,255,102,0.62))",
+                border: `2px solid ${C.green}`,
+                color: "#fff",
+                boxShadow: "0 0 18px rgba(0,255,102,0.3)",
+                letterSpacing: "0.06em",
+              }}
+            >
+              <i className="fa-solid fa-message mr-2" />ENVIAR MENSAJE
+            </button>
+          ) : (
+            <button
+              onClick={() => { if (!sent) addSent(player.name); }}
+              disabled={sent}
+              className="w-full font-orbitron font-black text-sm rounded-xl py-3.5 border-none transition-all duration-200"
+              style={{
+                background: sent ? "rgba(176,38,255,0.12)" : "linear-gradient(135deg,rgba(0,240,255,0.28),rgba(0,240,255,0.62))",
+                border: `2px solid ${sent ? C.purple : C.cyan}`,
+                color: sent ? C.purple : "#fff",
+                boxShadow: sent ? "none" : "0 0 18px rgba(0,240,255,0.3)",
+                cursor: sent ? "default" : "pointer",
+                letterSpacing: "0.06em",
+              }}
+              onMouseEnter={(e) => { if (!sent) e.currentTarget.style.boxShadow = glowCyan; }}
+              onMouseLeave={(e) => { if (!sent) e.currentTarget.style.boxShadow = "0 0 18px rgba(0,240,255,0.3)"; }}
+            >
+              {sent
+                ? <><i className="fa-solid fa-check mr-2" />SOLICITUD ENVIADA</>
+                : <><i className="fa-solid fa-user-plus mr-2" />+ AGREGAR AMIGO</>}
+            </button>
+          )}
+
           <button
             onClick={hideCard}
             className="w-full font-rajdhani font-bold text-sm rounded-xl py-3 border-none cursor-pointer transition-all"
@@ -1965,7 +2030,6 @@ function PlayerHoverCard() {
     </div>
   );
 }
-
 // ─── PlayerChip: wraps any player reference with click-to-card ────────────────
 function PlayerChip({ name, avatar, rango, plataforma, mic, children }: { name: string; avatar: string; rango: string; plataforma: "PC" | "PS4"; mic: boolean; children: React.ReactNode }) {
   const { showCard } = useFriends();
