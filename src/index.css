@@ -1,7 +1,17 @@
 @import 'tailwindcss';
 
+/* Asegurar que la pantalla no se desborde en dispositivos móviles */
 html,
 body,
 #root {
-  height: 100%;
+  width: 100%;
+  min-height: 100%;
+  overflow-x: hidden;
+  margin: 0;
+  padding: 0;
+}
+
+/* Permitir que cualquier elemento hijo se adapte al ancho de la pantalla */
+* {
+  box-sizing: border-box;
 }
